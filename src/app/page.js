@@ -1,95 +1,79 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client'
+import axios from 'axios';
+import { useState, useEffect } from 'react';
 
-export default function Home() {
-  return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+const Home = () =>{
+  const [posts, setPosts] = useState([]);
+  const api='https://jsonplaceholder.typicode.com/posts';
+  useEffect(()=>{
+    const getPosts = async()=>{
+      const { data: res } = await axios.get(api).catch(function (error) {
+        if (error.response) {
+          // La respuesta fue hecha y el servidor respondió con un código de estado que esta fuera del rango 
+          console.log(error.response.data);
+          console.log(error.response.status);
+          console.log(error.response.headers);
+        } else if (error.request) {
+          // La petición fue hecha pero no se recibió respuesta
+          console.log(error.request);
+        } else {
+          // Algo paso al preparar la petición que lanzo un Error
+          console.log('Error', error.message);
+        }
+        console.log(error.config);
+      });
+      setPosts(res)
+    };
+    getPosts();
+  }, [] );
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+  const addPost = async () =>{
+    const post = {title: "Nuevo Post", body: "new"};
+    await axios.post(api, post);
+    setPosts([post, ...posts]);
+  };
+  
+  const updatedPost = async (post) =>{
+    post.title = 'titulo actualizado';
+    await axios.put(api + '/' + post.id);
+    const postsClone = [...posts];
+    const index = postsClone.indexOf(post);
+    postsClone[index] = {...post};
+    setPosts(postsClone);
+  };
+  const deletePost = async (post) =>{
+    await axios.delete(api + '/' + post.id + post);
+    setPosts(posts.filter(p=> p.id !== post.id));
+  };
 
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  );
+  return (<>
+  <div className="container">
+    <h2> There are {posts.length} post in the database</h2>
+    <button onClick={addPost} className='btn btn-primary'>Agregar</button>
+    <table className='table'>
+      <thead>
+        <tr>
+          <th>Titulo</th>
+          <th>Actualizar</th>
+          <th>Eliminar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {posts.map((post) =>(
+          <tr key={post.id}>
+            <td>{post.title}</td>
+            <td>
+              <button onClick={() => updatedPost(post)} className='btn btn-info btn-sm'>Actualizar</button>
+            </td>
+            <td>
+              <button onClick={()=> deletePost(post)} className='btn btn-danger btn-sm'>Eliminar</button>
+            </td>
+          </tr>
+        )
+          )}
+      </tbody>
+    </table>
+  </div>
+  </>);
 }
+export default Home;
